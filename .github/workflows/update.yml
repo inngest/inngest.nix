@@ -1,0 +1,71 @@
+name: Update Inngest
+
+on:
+  schedule:
+    - cron: "23 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-inngest
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: cachix/install-nix-action@b85815f71a6de0ddee80b8a80a98d43f4bcc66c7 # v31
+
+      - name: Update release and verify archive hashes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./update.sh
+
+      - name: Validate package
+        run: |
+          nix flake check --all-systems
+          nix build --no-link -L
+          nix run . -- version
+          git diff --check
+
+      - name: Summarize update
+        id: update
+        run: |
+          echo "version=$(nix eval --raw .#packages.x86_64-linux.default.version)" >> "$GITHUB_OUTPUT"
+          if git diff --quiet -- package.nix; then
+            echo 'Inngest is already up to date.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo '## Package update'
+              echo '```diff'
+              git diff -- package.nix
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # The repository must allow GitHub Actions to create pull requests.
+      # PR workflows triggered by GITHUB_TOKEN require approval; validation
+      # above runs before publishing the update without depending on them.
+      - name: Create or update pull request
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          branch: automation/update-inngest
+          add-paths: package.nix
+          draft: false
+          commit-message: "inngest: update to ${{ steps.update.outputs.version }}"
+          title: "inngest: update to ${{ steps.update.outputs.version }}"
+          body: |
+            Updates the official Inngest release binaries to [v${{ steps.update.outputs.version }}](https://github.com/inngest/inngest/releases/tag/v${{ steps.update.outputs.version }}).
+
+            Validation completed before opening this PR:
+            - All three release archives downloaded and checked against upstream checksums.
+            - All supported platforms evaluated with `nix flake check --all-systems`.
+            - x86_64 Linux package built, including the installed-version check, and run successfully.
+
+            ARM64 Linux and macOS binaries were not executed by this workflow.
+            [Workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
