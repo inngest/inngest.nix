@@ -57,6 +57,7 @@ jobs:
           branch: automation/update-inngest
           add-paths: package.nix
           draft: false
+          reviewers: KiKoS0,albertchae
           commit-message: "inngest: update to ${{ steps.update.outputs.version }}"
           title: "inngest: update to ${{ steps.update.outputs.version }}"
           body: |
