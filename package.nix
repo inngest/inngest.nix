@@ -8,22 +8,22 @@ let
   sources = {
     x86_64-linux = {
       platform = "linux_amd64";
-      hash = "sha256-cvZyoGKzRZVWbc5m3juWNBZxMHVMpHAzRjYEf/30wog=";
+      hash = "sha256-foBi4/dErJXiSuHsRRkZXsGjpOdO20FvtSJfanjzgt4=";
     };
     aarch64-linux = {
       platform = "linux_arm64";
-      hash = "sha256-oOw71R4fRlDqwJaw3ynhuNJuwABKt0jNTxFrwaFMD8s=";
+      hash = "sha256-7CllXNkDdRTw9nKB+zLO4HCiGw5JeEFgsiholm//YFY=";
     };
     aarch64-darwin = {
       platform = "darwin_arm64";
-      hash = "sha256-6LLuepRQACJraGWeWCyaACBv1By2UNSB9NIrJLfzOkU=";
+      hash = "sha256-TyvdgqnzyfPVszk5zSYm7k1bJR8iu/ywR9bHzvZs2MM=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "inngest";
-  version = "1.50.0";
+  version = "1.51.0";
 
   strictDeps = true;
   src = fetchurl {
